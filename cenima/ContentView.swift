@@ -7,18 +7,22 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+struct NaviView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> ViewController {
+        return ViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: ViewController, context: Context) {
+        // Update the view controller if needed
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            // Embed the UIViewControllerRepresentable
+            NaviView()
+        }
+        .padding()
+    }
 }
