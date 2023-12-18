@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import CoreBluetooth
+
+let SERVICE_UUID = CBUUID(string: "12a59900-17cc-11ec-9621-0242ac130002")
 
 struct NaviView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> ViewController {
@@ -17,7 +20,98 @@ struct NaviView: UIViewControllerRepresentable {
     }
 }
 
+class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
+    private var centralManager: CBCentralManager?
+
+    @Published var statusMessages = [String]()
+
+    // Record the device we want to connect to.
+    private var peripheral: CBPeripheral?
+
+    var writableCharacteristic: CBCharacteristic?
+    
+    override init() {
+        super.init()
+        self.centralManager = CBCentralManager(delegate: self, queue: .main)
+
+        let dateformatter = DateFormatter()
+        dateformatter.dateFormat = "YYYY-MM-dd HH:mm:ss" 
+
+        // Send a message to the device every 1 seconds.
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            self.sendData("Hello, ARTrack! " + dateformatter.string(from: Date()))
+        }
+    }
+}
+
+extension BluetoothViewModel: CBCentralManagerDelegate {
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state == .poweredOn {
+            self.centralManager?.scanForPeripherals(withServices: nil)
+            statusMessages.append("Status: Scanning for peripherals...")
+        } else {
+            statusMessages.append("Status: Bluetooth not available.")
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        // We want the device with the name "ARTrack"
+        if peripheral.name == "ARtrack" {
+            self.centralManager?.stopScan()
+            self.peripheral = peripheral
+            self.centralManager?.connect(peripheral, options: nil)
+            statusMessages.append("Status: Found ARTrack!")
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        if peripheral == self.peripheral {
+            peripheral.delegate = self
+            peripheral.discoverServices(nil)
+            statusMessages.append("Status: Connected to ARTrack!")
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if let error = error {
+            statusMessages.append("Error discovering services: \(error.localizedDescription)")
+            return
+        }
+        statusMessages.append("Log: All services: \(peripheral.services ?? [])")
+
+        if let service = peripheral.services?.first(where: { $0.uuid == SERVICE_UUID }) {
+            statusMessages.append("Status: Discovered service: \(service)")
+            peripheral.discoverCharacteristics(nil, for: service)
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        if let error = error {
+            statusMessages.append("Error discovering characteristics: \(error.localizedDescription)")
+            return
+        }
+
+        statusMessages.append("Log: All characteristics: \(service.characteristics ?? [])")
+
+        for characteristic in service.characteristics ?? [] {
+            if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
+                writableCharacteristic = characteristic
+                statusMessages.append("Status: Discovered writable characteristic: \(characteristic)")
+            }
+        }
+    }
+
+    func sendData(_ data: String) {
+        if let peripheral = self.peripheral, let characteristic = writableCharacteristic {
+            let dataToSend = data.data(using: .utf8)
+            peripheral.writeValue(dataToSend!, for: characteristic, type: .withResponse)
+            statusMessages.append("Status: Sent data: \(data)")
+        }
+    }
+}
+
 struct ContentView: View {
+    @ObservedObject private var bluetoothViewModel = BluetoothViewModel()
     var body: some View {
         VStack {
             // Embed the UIViewControllerRepresentable
