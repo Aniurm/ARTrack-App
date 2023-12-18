@@ -443,6 +443,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cenima/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "我们的应用使用蓝牙来发现并连接到附近的ARTrack设备。";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "我们的应用需要使用蓝牙来与ARTrack设备通信。";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Your location is required for xyz benefits for you";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is required for xyz benefits for you";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -474,6 +478,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cenima/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "我们的应用使用蓝牙来发现并连接到附近的ARTrack设备。";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "我们的应用需要使用蓝牙来与ARTrack设备通信。";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Your location is required for xyz benefits for you";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is required for xyz benefits for you";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
