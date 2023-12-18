@@ -61,6 +61,7 @@ class ViewController: UIViewController {
 
 // MARK: - TopAlertsBarViewController
 class TopAlertsBarViewController: ContainerViewController {
+    var bluetoothViewModel = BluetoothViewModel() // Add a property for the Bluetooth view model
     
     lazy var topAlertsBannerView: InstructionsBannerView = {
         let banner = InstructionsBannerView()
@@ -118,9 +119,13 @@ class TopAlertsBarViewController: ContainerViewController {
     }
     
     public func navigationService(_ service: NavigationService, didUpdate progress: RouteProgress, with location: CLLocation, rawLocation: CLLocation) {
+        // Call the BLE send function with the updated navigation details
+        let distanceRemaining = progress.currentLegProgress.currentStepProgress.distanceRemaining
+        let nextStepDescription = progress.upcomingStep?.description ?? "Unknown"
+        let navigationUpdate = "Distance remaining: \(distanceRemaining), Next Step: \(nextStepDescription)"
+        bluetoothViewModel.sendData(navigationUpdate)
         // print current step progress
-        print("Distance remaining: \(progress.currentLegProgress.currentStepProgress.distanceRemaining), Next Step: \(String(describing: progress.upcomingStep?.description))")
-        
+        print("Distance remaining: \(distanceRemaining), Next Step: \(nextStepDescription)")
         
         topAlertsBannerView.updateDistance(for: service.routeProgress.currentLegProgress.currentStepProgress)
         let allAlerts = progress.upcomingRouteAlerts.filter({ !$0.description.isEmpty }).map({ $0.description })
@@ -199,14 +204,6 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     override init() {
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
-
-        let dateformatter = DateFormatter()
-        dateformatter.dateFormat = "YYYY-MM-dd HH:mm:ss" 
-
-        // Send a message to the device every 1 seconds.
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            self.sendData("Hello, ARTrack! " + dateformatter.string(from: Date()))
-        }
     }
 }
 
@@ -268,6 +265,8 @@ extension BluetoothViewModel: CBCentralManagerDelegate {
     }
 
     func sendData(_ data: String) {
+        // log
+        print("I'm going to send data: \(data)")
         if let peripheral = self.peripheral, let characteristic = writableCharacteristic {
             let dataToSend = data.data(using: .utf8)
             peripheral.writeValue(dataToSend!, for: characteristic, type: .withResponse)
