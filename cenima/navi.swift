@@ -218,6 +218,8 @@ extension MapboxCoreNavigation.RouteAlert: CustomStringConvertible {
     }
 }
 
+// bool to check whether we found writable characteristic
+var isReady: Bool = false
 
 class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     private var centralManager: CBCentralManager?
@@ -287,18 +289,22 @@ extension BluetoothViewModel: CBCentralManagerDelegate {
         for characteristic in service.characteristics ?? [] {
             if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
                 writableCharacteristic = characteristic
+                isReady = true
                 print("Log: Discovered writable characteristic: \(characteristic)")
             }
         }
     }
 
     func sendData(_ data: String) {
+        if !isReady {
+            print("Error: Not ready to send data")
+            return
+        }
         // log
-        print("I'm going to send data: \(data)")
         if let peripheral = self.peripheral, let characteristic = writableCharacteristic {
             let dataToSend = data.data(using: .utf8)
             peripheral.writeValue(dataToSend!, for: characteristic, type: .withResponse)
-            print("Status: Sent data: \(data)")
+            print("I'm going to send data: \(data)")
         }
     }
 }
