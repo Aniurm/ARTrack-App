@@ -204,6 +204,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     override init() {
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
+        self.peripheral = nil
+        self.writableCharacteristic = nil
     }
 }
 
