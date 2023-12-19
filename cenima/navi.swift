@@ -10,10 +10,36 @@ import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
 import MapboxNavigationNative
-
 import CoreBluetooth
 
 let SERVICE_UUID = CBUUID(string: "12a59900-17cc-11ec-9621-0242ac130002")
+
+// class to storing data we want to send
+class NavigationData: Encodable {
+    var distanceRemaining: Double
+    var nextStepDescription: String
+    
+    enum CodingKeys: String, CodingKey {
+        case distanceRemaining
+        case nextStepDescription
+    }
+    
+    init(distanceRemaining: Double, nextStepDescription: String) {
+        self.distanceRemaining = distanceRemaining
+        self.nextStepDescription = nextStepDescription
+    }
+    
+    func toJSONString() -> String? {
+        let encoder = JSONEncoder()
+        do {
+            let data = try encoder.encode(self)
+            return String(data: data, encoding: .utf8)
+        } catch {
+            print("Error when encoding NavigationData to JSON: \(error)")
+            return nil
+        }
+    }
+}
 
 class ViewController: UIViewController {
 
@@ -120,12 +146,12 @@ class TopAlertsBarViewController: ContainerViewController {
     
     public func navigationService(_ service: NavigationService, didUpdate progress: RouteProgress, with location: CLLocation, rawLocation: CLLocation) {
         // Call the BLE send function with the updated navigation details
-        let distanceRemaining = progress.currentLegProgress.currentStepProgress.distanceRemaining
-        let nextStepDescription = progress.upcomingStep?.description ?? "Unknown"
-        let navigationUpdate = "Distance remaining: \(distanceRemaining), Next Step: \(nextStepDescription)"
-        bluetoothViewModel.sendData(navigationUpdate)
-        // print current step progress
-        print("Distance remaining: \(distanceRemaining), Next Step: \(nextStepDescription)")
+        guard let navigationData = NavigationData(distanceRemaining: progress.currentLegProgress.currentStepProgress.distanceRemaining, nextStepDescription: progress.upcomingStep?.description ?? "Unknown").toJSONString() else {
+            print("Error when encoding NavigationData to JSON")
+            return
+        }
+        bluetoothViewModel.sendData(navigationData)
+        print("Status: Sent data: \(navigationData)")
         
         topAlertsBannerView.updateDistance(for: service.routeProgress.currentLegProgress.currentStepProgress)
         let allAlerts = progress.upcomingRouteAlerts.filter({ !$0.description.isEmpty }).map({ $0.description })
